@@ -1,0 +1,165 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define CHUNK_SIZE 14
+char* readWord(FILE* in) {
+
+	int allocated = 0;
+	int used = 1;
+	char* p = NULL;
+	char c;
+	while ((c = fgetc(in)) != EOF) {
+		//if (c == ' ') { break; }
+		if (allocated <= used) {
+			char* q = (char* )realloc(p, sizeof(char) * (allocated + CHUNK_SIZE));
+			if (!q) { break; }
+			p = q; allocated += CHUNK_SIZE;
+		}
+		p[used - 1] = c;
+		used++;
+	}
+	if (p) {
+		p[used - 1] = 0;
+	}
+	return p;
+}
+
+typedef struct Node_ {
+    char value;
+    struct Node_* next;
+} Node;
+
+Node* newNode() {
+    Node* new_n = (Node*)malloc(sizeof(Node));
+    if (!new_n) return NULL;
+    new_n->next = NULL;
+    return new_n;
+}
+
+void freeNode(Node* node) {
+    free(node);
+    return;
+}
+
+typedef struct Stack_ {
+    int len;
+    Node* head;
+} Stack;
+
+Stack* newStack() {
+    Stack* new_s = (Stack*)malloc(sizeof(Stack));
+    if (!new_s) return NULL;
+    new_s->head = NULL;
+    new_s->len = 0;
+    return new_s;
+}
+
+void freeStack(Stack* stack) {
+    if (stack->head == NULL) {
+        free(stack);
+        return;
+    }
+    Node* cur = stack->head;
+    while (cur->next != NULL) {
+        Node* cur_next = cur->next;
+        freeNode(cur);
+        cur = cur_next;
+    }
+    freeNode(cur);
+    free(stack);
+    return;
+}
+
+void push(Stack* stack, char value) {
+    Node* new_head = newNode();
+    new_head->value = value;
+    new_head->next = stack->head;
+    stack->head = new_head;
+    stack->len += 1;
+    return;
+}
+
+char pop(Stack* stack) {
+    if (stack->head == NULL) return NULL;
+    Node* cur = stack->head;
+    char value = cur->value;
+    stack->head = cur->next;
+    freeNode(cur);
+    stack->len -= 1;
+    return value;
+}
+
+int isStackEmpty(Stack* stack) {
+    if (stack->len == 0) return 1;
+    else return 0;
+}
+
+int getStackSize(Stack* stack) {
+    return (stack->len);
+}
+
+
+int main() {
+    FILE* in, * out;
+    in = fopen("input.txt", "r");
+    out = fopen("output.txt", "w");
+        if ( (out == NULL) || (in == NULL)) {
+            printf("no data");
+            return 1;
+        }
+    char* p = readWord(in);
+    printf("%s", p);
+    char c;
+    char open[3];
+    open[0] = '('; open[1] = '{'; open[2] = '[';
+    char close[3];
+    close[0] = ')'; close[1] = '}'; close[2] = ']';
+    Stack* stack = newStack();
+    int jjj = 0;
+    int oppa;
+    while (jjj < strlen(p)) {
+        int k = 1;
+        for (int i = jjj; p[i] != ' '; i++) {
+            oppa = i;
+            c = p[i];
+            if ((c == open[0]) || (c == open[1]) || (c == open[2])) {
+                push(stack, c);
+                continue;
+            }
+            if (c == close[0]) {
+                if (!isStackEmpty(stack)) {
+                    if (open[0] == pop(stack)) continue;
+                }
+                k = -1;
+                break;
+            }
+            else if (c == close[1]) {
+                if (!isStackEmpty(stack)) {
+                    if (open[1] == pop(stack)) continue;
+                }
+                k = -1;
+                break;
+            }
+            else if (c == close[2]) {
+                if (!isStackEmpty(stack)) {
+                    if (open[2] == pop(stack)) continue;
+                }
+                k = -1;
+                break;
+            }
+        }
+        while (p[oppa] != ' ') {
+            oppa++;
+        }
+        jjj = oppa + 1;
+        if (((k == 1) && (isStackEmpty(stack))) || (p == NULL)) {
+            fprintf(out, "%s\n", "YES");
+        }
+        else { fprintf(out, "%s\n", "NO"); }
+        
+        if (oppa + 1 == strlen(p)) break;
+    }
+    fclose(out);
+    return 0;
+}
