@@ -1,0 +1,123 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+typedef struct QueueNode_ {
+    int value;
+    struct QueueNode_* next;
+} QueueNode;
+
+typedef struct Queue_ {
+    QueueNode* head;
+    QueueNode* tail;
+} Queue;
+
+Queue* newQueue();
+int dequeue(Queue* q);
+int empty(Queue* q);
+void enqueue(Queue* q, int r);
+void bfs(int from, int** matrix, int visited[], int dists[], int N, int end, FILE* output);
+
+int main() {
+    FILE* output = fopen("output.txt", "w");
+    FILE* input = fopen("input.txt", "r");
+    if ((input == NULL) || (output == NULL)) {
+        printf("no data");
+        return 1;
+    }
+    int N, M, start, end;
+    fscanf(input, "%d %d", &N, &M);
+    int** matrix = (int**)calloc(N, N * sizeof(int*));
+    int* visited = (int*)calloc(N, N * sizeof(int));
+    int* dists = (int*)calloc(N, N * sizeof(int));
+    fscanf(input, "%d %d", &start, &end);
+    for (int i = 0; i < N; i++) {
+        if (matrix) {
+            matrix[i] = (int*)calloc(N, N * sizeof(int*));
+        }
+    }
+    for (int i = 0; i < N; i++) {
+        int x, y;
+        fscanf(input, "%d %d", &x, &y);
+        matrix[x][y] = 1;
+        matrix[y][x] = 1;
+    }
+    bfs(start, matrix, visited, dists, N, end, output);
+    fclose(input);
+    fclose(output);
+}
+
+Queue* newQueue() {
+    Queue* q = (Queue*)malloc(sizeof(Queue));
+    q->head = NULL;
+    q->tail = NULL;
+    return q;
+}
+
+int dequeue(Queue* q) {
+    QueueNode* a = q->head;
+    q->head = a->next;
+    if (q->head == NULL) {
+        q->tail = NULL;
+    }
+    int k = a->value;
+    free(a);
+    return k;
+}
+
+int empty(Queue* q) {
+    return (q->head == NULL) && (q->tail == NULL);
+}
+
+void enqueue(Queue* q, int r) {
+    QueueNode* n = (QueueNode*)malloc(sizeof(QueueNode));
+    n->value = r;
+    n->next = NULL;
+    if (q->tail != NULL) {
+        q->tail->next = n;
+    }
+    else {
+        q->head = n;
+    }
+    q->tail = n;
+}
+
+void bfs(int from, int** matrix, int visited[], int dists[], int N, int end, FILE* output) {
+    Queue* q = newQueue();
+    int j = 1;
+    visited[from] = 1;
+    enqueue(q, from);
+    while (!empty(q)) {
+        int curr = dequeue(q);
+        for (int i = 0; i < N; i++) {
+            if (matrix[curr][i] && visited[i] && i == end) {
+                if (dists[i] == dists[curr] + 1) {
+                    j = 0;
+                }
+            }
+            if (matrix[curr][i] && !visited[i]) {
+                dists[i] = dists[curr] + 1;
+                visited[i] = 1;
+                enqueue(q, i);
+            }
+        }
+    }
+    fprintf(output, "%d\n%d", dists[end], j);
+    free(q);
+    free(visited);
+    free(dists);
+    for (int i = 0; i < N; i++) free(matrix[i]);
+    free(matrix);
+}
+
+
+
+
+
+/*int** A = (int**)calloc(N * sizeof(int*));
+	if (!A) {
+		for (int i = 0; i < N; i++) {
+			A[i] = (int*)calloc(M * sizeof(int));
+		} */
